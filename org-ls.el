@@ -44,6 +44,11 @@
 (defun org-ls--var-value (param)
   (cddr param))
 
+(defun org-ls-load-file (file-name)
+  (let ((expanded-name (expand-file-name file-name)))
+    (org-babel-load-file expanded-name)
+    (setq org-ls--support-file-name expanded-name)))
+
 (defun org-ls-do (name &rest args)
   (with-temp-buffer
     (insert-file-contents org-ls--support-file-name)
@@ -62,3 +67,5 @@
                    (setcdr it new-cdr))))
       (message "POST: %s" info)
       (org-babel-execute-src-block nil info))))
+
+(provide 'org-ls)
