@@ -37,8 +37,8 @@ If you followed the installation instructions above you should have access to th
 Calling this function will execute the named block in your support file. Argument
 passing is possible by defining =:var= header parameters:
 
-/Note - since this readme is written in org-mode itself, the org directive syntax has/
-/been modified to omit the =#+= prefix./
+/Note - since this readme is written in org-mode itself, the org directive syntax has
+been modified to omit the =#+= prefix./
 
 #+begin_src text
    name: dock-activate
@@ -73,8 +73,8 @@ These elisp helpers can be defined right next to your other source blocks. You c
 course compose the execution of multiple different source blocks to achieve
 sophisticated behaviors.
 
-/If there for some reason a demand to have some elisp blocks not evaluated and instead/
-/used with =org-ls-do= we can figure that out later./
+/If there for some reason a demand to have some elisp blocks not evaluated and
+instead used with =org-ls-do= we can figure that out later./
 
 
 *** Language Support
