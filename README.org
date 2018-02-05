@@ -1,0 +1,85 @@
+* org-ls
+
+=org-ls=, or "Org Life Support", is a package that allows you to designate an
+org-file from which you can store babel code-blocks and call them easily from
+elisp. Combine this with Hydra and you can create powerful interfaces for invoking
+whatever kind of automation you can imagine.
+
+
+** Installation
+
+I just hacked this together and have no idea how to publish a package. But if you're
+using =straight.el= then you're in luck, since you can just install directly:
+
+#+begin_src emacs-lisp
+  (setq my-org-life-support (expand-file-name "~/life/support.org"))
+
+  (use-package org-ls
+    :straight (org-ls :type git :host github :repo "dustinlacewell/org-ls")
+    :config
+    (require 'org-ls)
+    (org-ls-load-file my-org-life-support))
+#+end_src
+
+When you start Emacs, your support file should be loaded. You can confirm by checking
+the contents of =org-ls--support-file-name=
+
+
+** Usage
+
+If you followed the installation instructions above you should have access to the
+=org-ls-do= function:
+
+#+begin_src emacs-lisp
+  (org-ls-do BLOCK-NAME &rest ARGS)
+#+end_src
+
+Calling this function will execute the named block in your support file. Argument
+passing is possible by defining =:var= header parameters:
+
+//Note - since this readme is written in org-mode itself, the org directive syntax has
+been modified to omit the =#+= prefix.//
+
+#+begin_src text
+   name: dock-activate
+   begin_src apples :result silent :var target="Google Chrome"
+     tell application target to activate
+     tell application "System Events"
+          click UI element target of list 1 of application process "Dock"
+     end tell
+   end_src
+#+end_src
+
+Arguments can then be passed using a plist:
+
+#+begin_src emacs-lisp
+  (org-ls-do "dock-activate" :target "Safari")
+#+end_src
+
+
+*** Lisp Evaluation
+
+When you call =org-ls-load-file= on your support file, you gain access to the named
+source-blocks within it by using =org-ls-do=. But also, the file is tangled and all
+=emacs-lisp= blocks will be automatically evaluated. This means you can abstract away
+=org-ls-do= like so:
+
+#+begin_src emacs-lisp
+  (defun osx-activate (target)
+    (org-ls-do "dock-activate" :target target))
+#+end_src
+
+These elisp helpers can be defined right next to your other source blocks. You can of
+course compose the execution of multiple different source blocks to achieve
+sophisticated behaviors.
+
+If there for some reason a demand to have some elisp blocks not evaluated and instead
+used with =org-ls-do= we can figure that out later.
+
+
+*** Language Support
+
+=org-ls= uses =org-babel= behind the scenes. So if there is a language you want
+support for, you just need to look at adding it to Babel. Infact, if you can perform
+=C-c C-c= on a source block, and it works, then you can call it from =org-ls-do=.
+
