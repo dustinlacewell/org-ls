@@ -14,11 +14,11 @@
 
 (defvar org-ls--support-file-name nil)
 
-(defun keyword-name (keyword)
+(defun org-ls--keyword-name (keyword)
   (s-chop-prefix ":" (symbol-name keyword)))
 
 (defun org-ls--param-is-var? (param)
-  (string= "var" (keyword-name (first param))))
+  (string= "var" (org-ls--keyword-name (first param))))
 ;; (org-ls--param-is-var? '(:var foo . "var"))
 ;; (org-ls--param-is-var? '(:name foo . "var"))
 
@@ -30,7 +30,7 @@
 ;; (org-ls--get-val-props '((:foo bar . "baz") (:var app . "Google Chrome")))
 
 (defun org-ls--get-var-param (vars keyword)
-  (let ((name (keyword-name keyword)))
+  (let ((name (org-ls--keyword-name keyword)))
     (seq-find
      (lambda (ele)
        (let* ((var-sym (second ele))
