@@ -38,7 +38,7 @@ Calling this function will execute the named block in your support file. Argumen
 passing is possible by defining =:var= header parameters:
 
 /Note - since this readme is written in org-mode itself, the org directive syntax has
-been modified to omit the =#+= prefix./
+been modified to omit the/ =#+= /prefix./
 
 #+begin_src text
    name: dock-activate
