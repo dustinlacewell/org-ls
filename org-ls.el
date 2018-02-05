@@ -31,11 +31,12 @@
 
 (defun org-ls--get-var-param (vars keyword)
   (let ((name (org-ls--keyword-name keyword)))
-    (seq-find
+    (cl-find
      (lambda (ele)
        (let* ((var-sym (second ele))
               (var-name (symbol-name var-sym)))
-         (string= var-name name))) vars)))
+         (string= var-name name)))
+     vars)))
 
 (defun org-ls--var-name (param)
   (let* ((app-sym (second param)))
