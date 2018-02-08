@@ -1,24 +1,32 @@
-;;; org-ls.el --- Org Life Support
+;;; org-ls.el --- Org Life Support -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Dustin Lacewell
 
 ;; Author: Dustin Lacewell <dlacewell@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: (cl-lib f s)
-;; Keywords: org babel
+;; Package-Requires: ((emacs "24") (f "0.20.0") (s "1.12.0"))
+;; Keywords: org babel tools
 ;; URL: http://github.com/dustinlacewell/org-ls
 
+;;; Commentary:
+
+;; org-ls, or “Org Life Support”, is a package that allows you to designate an
+;; org-file from which you can store babel code-blocks and call them easily
+;; from elisp. Combine this with Hydra and you can create powerful interfaces
+;; for invoking whatever kind of automation you can imagine.
+
+;;; Code:
 (require 'cl-lib)
 (require 'f)
 (require 's)
 
 (defvar org-ls--support-file-name nil)
 
-(defun keyword-name (keyword)
+(defun org-ls--keyword-name (keyword)
   (s-chop-prefix ":" (symbol-name keyword)))
 
 (defun org-ls--param-is-var? (param)
-  (string= "var" (keyword-name (first param))))
+  (string= "var" (org-ls--keyword-name (first param))))
 ;; (org-ls--param-is-var? '(:var foo . "var"))
 ;; (org-ls--param-is-var? '(:name foo . "var"))
 
@@ -30,12 +38,13 @@
 ;; (org-ls--get-val-props '((:foo bar . "baz") (:var app . "Google Chrome")))
 
 (defun org-ls--get-var-param (vars keyword)
-  (let ((name (keyword-name keyword)))
-    (seq-find
+  (let ((name (org-ls--keyword-name keyword)))
+    (cl-find
      (lambda (ele)
        (let* ((var-sym (second ele))
               (var-name (symbol-name var-sym)))
-         (string= var-name name))) vars)))
+         (string= var-name name)))
+     vars)))
 
 (defun org-ls--var-name (param)
   (let* ((app-sym (second param)))
@@ -69,3 +78,4 @@
       (org-babel-execute-src-block nil info))))
 
 (provide 'org-ls)
+;;; org-ls.el ends here
