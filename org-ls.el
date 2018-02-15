@@ -39,12 +39,14 @@
 
 (defun org-ls--get-var-param (vars keyword)
   (let ((name (org-ls--keyword-name keyword)))
-    (cl-find
+    (find-if
      (lambda (ele)
        (let* ((var-sym (second ele))
               (var-name (symbol-name var-sym)))
          (string= var-name name)))
      vars)))
+
+;; (org-ls--get-var-param '((:var uri . "https://example.com")) 'uri)
 
 (defun org-ls--var-name (param)
   (let* ((app-sym (second param)))
