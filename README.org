@@ -13,38 +13,9 @@ you're in luck, since you can just install directly:
 #+end_src
 
 * Usage
-
-If you followed the installation instructions above you should have access to the
-=org-ls-do= function:
-
-#+begin_src emacs-lisp
-  (org-ls-do BLOCK-NAME &rest ARGS)
-#+end_src
-
-Calling this function will execute the named block in your support file. Argument
-passing is possible by defining =:var= header parameters:
-
-/Note - since this readme is written in org-mode itself, the org directive syntax has
-been modified to omit the/ =#+= /prefix./
-
-#+begin_src text
-   name: dock-activate
-   begin_src apples :result silent :var target="Google Chrome"
-     tell application target to activate
-     tell application "System Events"
-          click UI element target of list 1 of application process "Dock"
-     end tell
-   end_src
-#+end_src
-
-Arguments can then be passed using a plist:
-
-#+begin_src emacs-lisp
-  (org-ls-do "dock-activate" :target "Safari")
-#+end_src
-
 ** Calling codeblocks
-You can call any codeblock in the current file with =org-ls-call=:
+You can call any codeblock in the current file with =org-ls-call=. Arguments can
+be passed using a plist:
 
 #+begin_src emacs-lisp
   (org-ls-call "blockname" :arg "val")
