@@ -1,22 +1,17 @@
-* org-ls
+#+title: Org Life Support
 
-=org-ls=, or "Org Life Support", is a package that allows you to designate an
-org-file from which you can store babel code-blocks and call them easily from
-elisp. Combine this with Hydra and you can create powerful interfaces for invoking
-whatever kind of automation you can imagine.
+Interact with org-mode babel code-blocks with elisp.
 
+* Installation
 
-** Installation
-
-I just hacked this together and have no idea how to publish a package. But if you're
-using =straight.el= then you're in luck, since you can just install directly:
+I have no idea how to publish a package. But if you're using =straight.el= then
+you're in luck, since you can just install directly:
 
 #+begin_src emacs-lisp
-  (setq my-org-life-support (expand-file-name "~/life/support.org"))
-
   (use-package org-ls
     :straight (org-ls :type git :host github :repo "dustinlacewell/org-ls")
     :config
+    (setq my-org-life-support (expand-file-name "~/org/support.org"))
     (require 'org-ls)
     (org-ls-load-file my-org-life-support))
 #+end_src
@@ -24,8 +19,7 @@ using =straight.el= then you're in luck, since you can just install directly:
 When you start Emacs, your support file should be loaded. You can confirm by checking
 the contents of =org-ls--support-file-name=
 
-
-** Usage
+* Usage
 
 If you followed the installation instructions above you should have access to the
 =org-ls-do= function:
@@ -56,13 +50,31 @@ Arguments can then be passed using a plist:
   (org-ls-do "dock-activate" :target "Safari")
 #+end_src
 
+** Calling codeblocks
+You can call any codeblock in the current file with =org-ls-call=:
 
-*** Lisp Evaluation
+#+begin_src emacs-lisp
+  (org-ls-call "blockname" :arg "val")
+#+end_src
 
-When you call =org-ls-load-file= on your support file, you gain access to the named
-source-blocks within it by using =org-ls-do=. But also, the file is tangled and all
-=emacs-lisp= blocks will be automatically evaluated. This means you can abstract away
-=org-ls-do= like so:
+You can evaluate the value of any named block in the current with =org-ls-resolve=:
+
+#+begin_src emacs-lisp
+  (org-ls-resolve "blockname")
+#+end_src
+
+** Loading support files
+
+When you call =org-ls-load-file= on an org file, you gain access to the named
+source-blocks within it by using =org-ls-do=.
+
+#+begin_src emacs-lisp
+  (org-ls-load-file "~/org/support/osx-dock.org")
+  (org-ls-do "dock-activate" :target "google-chrome")
+#+end_src
+
+Additionally, the file is tangled and all =emacs-lisp= blocks will be
+automatically evaluated. This means you can abstract away =org-ls-do= like so:
 
 #+begin_src emacs-lisp
   (defun osx-activate (target)
@@ -77,7 +89,7 @@ sophisticated behaviors.
 instead used with =org-ls-do= we can figure that out later./
 
 
-*** Language Support
+** Language Support
 
 =org-ls= uses =org-babel= behind the scenes. So if there is a language you want
 support for, you just need to look at adding it to Babel. Infact, if you can perform

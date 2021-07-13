@@ -1,157 +1,26 @@
-* Chrome
-** api
-*** ols-chrome-open
-   #+begin_src emacs-lisp
-     (defun ols-chrome-open (uri &optional active-tab)
-       (let ((as (if active-tab "chrome-open-active-tab" "chrome-open-new-tab")))
-         (org-ls-do as :uri uri)))
+* Example
 
-     ;; (ols-chrome-open "http://bing.com")
-     ;; (ols-chrome-open "http://google.com" t)
-   #+end_src
+Start by calling =(org-ls-load-file (buffer-file-name))= to load this file:
 
-   #+name: chrome-open-new-tab
-   #+begin_src apples :results silent :var uri="http://www.example.com/"
-     tell application "Google Chrome" to open location uri
-   #+end_src
-
-   #+name: chrome-open-active-tab
-   #+begin_src apples :results silent :var uri="http://www.example.com/"
-     tell application "Google Chrome" to set URL of active tab of window 1 to uri
-   #+end_src
-*** ols-chrome-wait
-   #+begin_src emacs-lisp
-     (defun ols-chrome-wait ()
-       (org-ls-do "chrome-wait"))
-
-     ;; (progn (ols-chrome-open "http://google.com") (ols-chrome-wait) (message "done"))
-   #+end_src
-#+name: chrome-wait
-#+begin_src apples :results silent
-  tell application "Google Chrome"
-      set waiting to loading of active tab of window 1
-      repeat while waiting = true
-          delay 1
-          set waiting to loading of active tab of window 1
-      end repeat
-  end tell
-#+end_src
-
-*** ols-chrome-wait-until
-   #+begin_src emacs-lisp
-     (defun ols-chrome-wait-until (uri)
-       (org-ls-do "chrome-wait-until" :uri uri))
-   #+end_src
-#+name: chrome-wait-until
-#+begin_src apples :results silent :var uri="http://google.com"
-  tell application "Google Chrome"
-          repeat until (URL of active tab of window 1 is equal to uri)
-                  delay 1
-          end repeat
-  end tell
-#+end_src
-*** ols-chrome-close-active
 #+begin_src emacs-lisp
-  (defun ols-chrome-close-active (&optional window)
-    (org-ls-do "chrome-close-active" :win (or window 1)))
-
-  ;; (ols-chrome-close-active 1)
+  (org-ls-load-file (buffer-file-name))
 #+end_src
 
-#+name: chrome-close-active
-#+begin_src apples :results silent :var win=1
-  tell application "Google Chrome"
-      set t to active tab of window win
-      delete t
-  end tell
+The following codeblock will be loaded into org-ls:
+
+#+name: open-url
+#+begin_src sh :var url="http://google.com/"
+  google-chrome-stable $url
 #+end_src
 
-*** ols-chrome-close-tabs
-   #+begin_src emacs-lisp
-     (defun ols-chrome-close-tabs (prefix)
-       (org-ls-do "chrome-close-tabs" :prefix prefix))
+You can now invoke it with either =(org-ls-do "open-url" :url "http://bing.com")=
+or through the evaluated helper via =(open-url "http://bing.com")=:
 
-     ;; (ols-chrome-close-tabs "http://www.example.com")
-   #+end_src
-
-   #+name: chrome-close-tabs
-   #+begin_src apples :results silent :var prefix="http://www.example.com"
-     tell application "Google Chrome"
-         set windowList to every tab of every window whose URL starts with prefix
-         repeat with tabList in windowList
-             set tabList to tabList as any
-             repeat with tabItr in tabList
-                 set tabItr to tabItr as any
-                 delete tabItr
-             end repeat
-         end repeat
-     end tell
-   #+end_src
-
-*** ols-chrome-select
-   #+begin_src emacs-lisp
-     (defun ols-chrome-select (selector)
-       (org-ls-do "chrome-select" :selector selector))
-
-     ;; (ols-chrome-select "document.querySelector('pre').innerHTML")
-   #+end_src
-
-   #+name: chrome-select
-   #+begin_src apples :results output :var selector="document.querySelector('pre').innerHTML"
-     tell application "Google Chrome"
-         set t to active tab of front window
-         set source to execute t javascript selector
-         return source
-     end tell
-   #+end_src
-
-*** ols-chrome-select-json
 #+begin_src emacs-lisp
-  (defun ols-chrome-select-json (uri)
-    (json-read-from-string (ols-chrome-select "document.querySelector('pre').innerHTML")))
-#+end_src
-*** ols-chrome-show
-#+begin_src emacs-lisp
-  (defun ols-chrome-show (&optional window)
-    (org-ls-do "chrome-show" :win (or window 1)))
+  (defun open-url (url)
+    (org-ls-do "open-url" :url url))
 #+end_src
 
-#+name: chrome-show
-#+begin_src apples :results silent :var win=1
-  on activateWin(a, w)
-          activate a
-          tell application "System Events"
-                  set main_menu to menu bar 1 of process (name of a)
-                  set window_item to menu bar item "Window" of main_menu
-                  set window_menu to menu "Window" of window_item
-                  set tab_menu to menu item (name of w) of window_menu
-                  click tab_menu
-          end tell
-  end activateWin
-
-  tell application "Google Chrome"
-          my activateWin(it, window win)
-  end tell
-#+end_src
-
-* Dock
-** api
-*** ols-dock-activate
-   #+begin_src emacs-lisp
-     (defun ols-dock-activate (target)
-       (org-ls-do "dock-activate" :target target))
-
-     ;; (ols-dock-activate "Google Chrome")
-   #+end_src
-
-   #+name: dock-activate
-   #+begin_src apples :result silent :var target="Google Chrome"
-     tell application target to activate
-     tell application "System Events"
-          click UI element target of list 1 of application process "Dock"
-     end tell
-   #+end_src
-
-   #+RESULTS: dock-activate
-   : UI element Google Chrome of list 1 of application process Dock
+Finally, since the =open-url= is in this file, you could also call it directly
+via =(org-ls-call "open-url" :url "http://bing.com")=
 

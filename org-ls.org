@@ -1,0 +1,173 @@
+#+title: Org Life Support
+#+startup: overview align
+#+babel: :cache no
+#+property: header-args :tangle yes
+
+This module allows you to interact with org-babel codeblocks from elisp.
+
+* Prelude
+#+begin_src emacs-lisp
+  ;;; org-ls.el --- Org Life Support -*- lexical-binding: t; -*-
+
+  ;; Copyright (C) 2017 Dustin Lacewell
+
+  ;; Author: Dustin Lacewell <dlacewell@gmail.com>
+  ;; Version: 0.1
+  ;; Package-Requires: ((emacs "24") (f "0.20.0") (s "1.12.0") (ht "0"))
+  ;; Keywords: org babel tools
+  ;; URL: http://github.com/dustinlacewell/org-ls
+
+  ;;; Commentary:
+
+  ;; org-ls, or “Org Life Support”, is a package that allows you to designate an
+  ;; org-file from which you can store babel code-blocks and call them easily
+  ;; from elisp. Combine this with Hydra and you can create powerful interfaces
+  ;; for invoking whatever kind of automation you can imagine.
+
+  ;;; Code:
+#+end_src
+* Dependencies
+#+begin_src emacs-lisp
+  (require 'cl-lib)
+  (require 'f)
+  (require 's)
+  (require 'ht)
+#+end_src
+
+* Globals
+** file-list
+
+#+begin_src emacs-lisp
+  (defvar org-ls--file-list nil)
+#+end_src
+
+* Boilerplate
+** keyword-name
+#+begin_src emacs-lisp
+  (defun org-ls--keyword-name (keyword)
+    (s-chop-prefix ":" (symbol-name keyword)))
+#+end_src
+** param-is-var?
+#+begin_src emacs-lisp
+  (defun org-ls--param-is-var? (param)
+    (string= "var" (org-ls--keyword-name (first param))))
+  ;; (org-ls--param-is-var? '(:var foo . "var"))
+  ;; (org-ls--param-is-var? '(:name foo . "var"))
+#+end_src
+** get-var-params
+#+begin_src emacs-lisp
+  (defun org-ls--get-var-params (params)
+    (cl-remove-if-not 'org-ls--param-is-var? params))
+  ;; (org-ls--get-val-props '((:foo bar . "baz") (:var app . "Google Chrome")))
+#+end_src
+** get-var-param
+#+begin_src emacs-lisp
+  (defun org-ls--get-var-param (vars keyword)
+    (let ((name (org-ls--keyword-name keyword)))
+      (find-if
+       (lambda (ele)
+         (let* ((var-sym (second ele))
+                (var-name (symbol-name var-sym)))
+           (string= var-name name)))
+       vars)))
+
+  ;; (org-ls--get-var-param '((:var uri . "https://example.com")) 'uri)
+#+end_src
+** var-name
+#+begin_src emacs-lisp
+  (defun org-ls--var-name (param)
+    (let* ((app-sym (second param)))
+      (symbol-name app-sym)))
+#+end_src
+** var-value
+#+begin_src emacs-lisp
+  (defun org-ls--var-value (param)
+    (cddr param))
+#+end_src
+* API
+** load-file
+#+begin_src emacs-lisp
+  (defun org-ls-load-file (file-name)
+    (let ((expanded-name (expand-file-name file-name)))
+      (org-babel-load-file expanded-name)
+      (setq org-ls--file-list (cl-adjoin expanded-name org-ls--file-list))))
+#+end_src
+** unload-file
+#+begin_src emacs-lisp
+  (defun org-ls-unload-file (file-name)
+    (let ((expanded-name (expand-file-name file-name)))
+      (setq org-ls--file-list (cl-set-difference org-ls--file-list (list expanded-name)))))
+#+end_src
+
+** do
+#+begin_src emacs-lisp
+  (defun org-ls-do (name &rest args)
+    (with-temp-buffer
+      (--map (insert-file it) org-ls--file-list)
+      (org-babel-goto-named-src-block name)
+      (-if-let (info (org-babel-get-src-block-info))
+          (let* ((params (third info))
+                 (vars (org-ls--get-var-params params)))
+            (message "PRE: %s" info)
+            (cl-loop for (key val) on args by #'cddr do
+                     (message (format "Key: %s" key))
+                     (message (format "Val: %s" val))
+                     (--when-let (org-ls--get-var-param vars key)
+                       (let* ((var-name (org-ls--var-name it))
+                              (var-sym (make-symbol var-name))
+                              (new-cdr (cons var-sym val)))
+                         (setcdr it new-cdr))))
+            (message "POST: %s" info)
+            (org-babel-execute-src-block nil info))
+        (message "No such block."))))
+#+end_src
+** resolve
+#+begin_src emacs-lisp
+  (defun org-ls-resolve (val)
+    (save-excursion
+      (pcase val
+        ((pred stringp) val)
+        ((pred symbolp) (s-trim (org-babel-ref-resolve
+                                 (symbol-name val)))))))
+#+end_src
+** call
+#+begin_src emacs-lisp
+  (defun org-ls-call (name &rest args)
+    (condition-case err
+        (save-excursion
+          (org-babel-goto-named-src-block name)
+          (-if-let (info (org-babel-get-src-block-info))
+              (let* ((params (third info))
+                     (vars (org-ls--get-var-params params)))
+                (message "PRE: %s" info)
+                (cl-loop for (key val) on args by #'cddr do
+                         (message (format "Key: %s" key))
+                         (message (format "Val: %s" val))
+                         (condition-case nil
+                             (--when-let (org-ls--get-var-param vars key)
+                               (let* ((var-name (org-ls--var-name it))
+                                      (var-sym (make-symbol var-name))
+                                      (var-val (pcase val
+                                                 ((pred stringp) val)
+                                                 ((pred symbolp) (s-trim (org-babel-ref-resolve
+                                                                          (symbol-name val))))))
+                                      (new-cdr (cons var-sym var-val)))
+                                 (setcdr it new-cdr)))
+                           (error (progn
+                                    (error (format "Arg %s named unknown block %s" key val))))))
+                (message "POST: %s" info)
+                (org-babel-execute-src-block nil info))
+            (message "No such block.")))
+      (error (message (error-message-string err)))))
+#+end_src
+* Post-amble
+#+begin_src emacs-lisp
+  (provide 'org-ls)
+  ;;; org-ls.el ends here
+#+end_src
+
+
+
+
+
+
